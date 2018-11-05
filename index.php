@@ -13,22 +13,7 @@ Author URI: http://www.michielkoning.nl
 
 require_once( __DIR__ . '/admin.php');
 
-function get_site_urls() {
-  $subsites = get_sites();
-  $subsite_urls = [];
-  foreach( $subsites as $subsite ) {
-    $subsite_id = get_object_vars( $subsite )['blog_id'];
-    $subsite_url = get_blog_details( $subsite_id )->siteurl . '/';
-    if ($subsite_url === network_site_url()) continue;
-    $subsite_urls[] = $subsite_url;
-  }
-  return $subsite_urls;
-}
-
 function generate_sw_files() {
-  if (site_url('/') === network_site_url()) return;
-
-
   if (strpos(get_site_url(), 'localhost') > -1) {
     $dir = str_replace('/wp-content', '', WP_CONTENT_DIR);
   } else {
@@ -60,19 +45,19 @@ function get_sw_version() {
 
 function get_sw_cached_assets() {
   $dir = get_template_directory_uri();
-  $urls = get_site_urls();
   $assets = [
+    get_site_url(),
     $dir . '/assets/css/style.css',
     $dir . '/assets/scripts/main.js',
   ];
-  return array_merge($urls, $assets);
+  return $assets;
 }
 
 function get_sw_configuration() {
     $configuration = array();
     $configuration['$version'] = get_sw_version();
     $configuration['$assets'] = get_sw_cached_assets();
-    $configuration['$offline'] = network_site_url('/nl/offline/');
+    $configuration['$offline'] = network_site_url('/offline/');
     return $configuration;
 }
 
