@@ -1,11 +1,10 @@
-/* global self, $version, $assets, URL, Response */
+/* global self, $version, $assets, $offline, URL, Response */
 
 'use strict'; // eslint-disable-line
 
 const config = {
   version: $version,
   staticCacheItems: $assets,
-  cachePathPattern: /^\/(?:(20[0-9]{2}|about|blog|css|images|js)\/(.+)?)?$/,
   offlineImage: `
     <svg role="img" aria-labelledby="offline-title"' viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
       <title id="offline-title">Offline</title>
@@ -13,7 +12,7 @@ const config = {
       <text fill="#9B9B9B" font-family="Times New Roman,Times,serif" font-size="72" font-weight="bold">
       <tspan x="93" y="172">offline</tspan></text></g>
     </svg>`,
-  offlinePage: '/offline/',
+  offlinePage: $offline,
 };
 
 /**
@@ -51,7 +50,7 @@ const fetchFromCache = event =>
       return response;
     });
 
-const offlineResponse = (resourceType) => {
+const offlineResponse = (resourceType, event) => {
   if (resourceType === 'image') {
     return new Response(
       config.offlineImage,
@@ -72,7 +71,6 @@ self.addEventListener('install', (event) => {
     const cacheKey = cacheName('static');
     const { staticCacheItems } = config;
 
-    staticCacheItems.push('/');
     staticCacheItems.push(config.offlinePage);
 
     return caches.open(cacheKey)
@@ -102,9 +100,10 @@ self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
     const criteria = {
-      // matchesPathPattern: config.cachePathPattern.test(url.pathname),
       isGETRequest: request.method === 'GET',
       isFromMyOrigin: url.origin === self.location.origin,
+      //isNotFromLocalhost: !url.origin.includes('localhost'),
+      isNotTheServiceWorker: !url.pathname.includes('service-worker'),
     };
     const failingCriteria = Object.keys(criteria)
       .filter(criteriaKey => !criteria[criteriaKey]);
@@ -123,7 +122,6 @@ self.addEventListener('fetch', (event) => {
     }
 
     const cacheKey = cacheName(resourceType);
-
     if (resourceType === 'content') {
       event.respondWith(fetch(request)
         .then(response => addToCache(cacheKey, request, response))
@@ -134,7 +132,7 @@ self.addEventListener('fetch', (event) => {
         .catch(() => fetch(request))
         .then(response => addToCache(cacheKey, request, response))
         .catch(() => offlineResponse(resourceType)));
-    }
+}
   }
   if (shouldHandleFetch(event)) {
     onFetch(event);
