@@ -17,4 +17,7 @@ function wp_supercache_generate_service_workers_admin() {
   </fieldset>
   <?php
 }
-add_cacheaction( 'cache_admin_page', 'wp_supercache_generate_service_workers_admin' );
+
+if ( isset( $_GET['page'] ) && 'wpsupercache' === $_GET['page'] ) {
+  add_cacheaction( 'cache_admin_page', 'wp_supercache_generate_service_workers_admin' );
+}
